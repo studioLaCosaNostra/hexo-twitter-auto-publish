@@ -33,7 +33,7 @@ There are three fields in the database: `published`, `to-publish`, `to-destroy`.
 
 - `to-publish` - contains all new posts that have not yet appeared on Twitter.
 
-- `to-destroy` - contains posts that for some reason have been moved to a working version, or we changed the twitterAutoPublish in the page from true to false.
+- `to-destroy` - contains posts that for some reason have been moved to a working version, or we changed the `twitterAutoPublish` in the page from true to false.
   
 **If you do not want a post to be sent to twitter, all you have to do is move it from `to-publish` to `published`.**
 
