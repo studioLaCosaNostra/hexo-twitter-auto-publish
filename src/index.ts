@@ -73,8 +73,9 @@ function twitterConfig(): Config {
   }
 }
 
-function setupTwitter(db: low.LowdbAsync<DbSchema>): TwitterActions {
-  db.defaults({ 'published': [], 'to-destroy': [], 'to-publish': [] }).write();
+async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterActions> {
+  await db.defaults({ 'published': [], 'to-destroy': [], 'to-publish': [] }).write();
+  await db.get('to-publish').remove().write();
   return {
     async updateDB({ title, permalink, tags }: Document, hexoPublished: boolean) {
       await db.read();
@@ -83,7 +84,6 @@ function setupTwitter(db: low.LowdbAsync<DbSchema>): TwitterActions {
         if (!hexoPublished) {
           await db.get('to-destroy').push(published).write();
           await db.get('to-publish').remove({ permalink }).write();
-          await db.get('published').remove({ permalink }).write();
         }
       } else {
         if (hexoPublished) {
@@ -143,14 +143,29 @@ function setupTwitter(db: low.LowdbAsync<DbSchema>): TwitterActions {
   }
 }
 
-function watchHexoPostRenderEvent(updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
-  hexo.extend.filter.register('after_post_render', async (document: Document) => {
+function processDocument(updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
+  return async (document: Document) => {
     const publishedPost: boolean = document.layout === 'post' && document.published;
     const publishedPage: boolean = document.layout !== 'post' && document.twitterAutoPublish !== false;
     const hexoPublished: boolean = publishedPost || publishedPage;
     await updateDB(document, hexoPublished);
     return document;
-  });
+  }
+} 
+
+function registerFilters(updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
+  const updateDocumentDB = processDocument(updateDB);
+  hexo.extend.filter.register('after_post_render', updateDocumentDB, { async: true });
+  hexo.extend.filter.register('after_generate', async () => {
+    for (var index = 0; index < hexo.locals.cache.posts.length; index++) {
+      const post = hexo.locals.cache.posts.data[index];
+      await updateDocumentDB(post);
+    }
+    for (var index = 0; index < hexo.locals.cache.pages.length; index++) {
+      const page = hexo.locals.cache.pages.data[index];
+      await updateDocumentDB(page);
+    }
+  }, { async: true });
 }
 
 function watchHexoDeployAfter(twitterPublish: () => Promise<void>) {
@@ -167,8 +182,8 @@ function registerConsoleCommandPublish(twitterPublish: () => Promise<void>) {
 
 async function start() {
   const db = await low(adapter);
-  const twitter: TwitterActions = setupTwitter(db);
-  watchHexoPostRenderEvent(twitter.updateDB);
+  const twitter: TwitterActions = await setupTwitter(db);
+  registerFilters(twitter.updateDB);
   watchHexoDeployAfter(twitter.publish);
   registerConsoleCommandPublish(twitter.publish);
 }
