@@ -1,6 +1,6 @@
 {
   "name": "hexo-twitter-auto-publish",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Hexo plugin to auto publish posts and pages on Twitter.",
   "main": "dist/index.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "twitter"
   ],
   "author": "Studio La Cosa Nostra <studiolacosanostra@gmail.com>",
-  "homepage": "https://github.com/studioLaCosaNostra/hexo-twitter-auto-publishg#readme",
+  "homepage": "https://github.com/studioLaCosaNostra/hexo-twitter-auto-publish#readme",
   "license": "ISC",
   "dependencies": {
     "lowdb": "^1.0.0",
