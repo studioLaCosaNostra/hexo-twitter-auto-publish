@@ -9,20 +9,20 @@
 Twitter account config via shell variables
 
 ```bash
-export TWITTER_CONSUMER_KEY=h2jOUdwVwCTRnM6zVeRC9fVhD
-export TWITTER_CONSUMER_SECRET=fq4eY5NmK2X9ZxSDSUaFqMBPWWMUCCYu35PMvzoqB0YzqLOTEs
-export TWITTER_ACCESS_TOKEN_KEY=929842798974656517-wrwhE2hNL5whclsgjWZ2PlGkuaAUIda
-export TWITTER_ACCESS_TOKEN_SECRET=RSbflHTBwAjUKZTeKk7lChzZrjbcoPh71wQuxth4ZErmj
+export TWITTER_CONSUMER_KEY=Xegp8XDTMqVxcI2tId1juT70X
+export TWITTER_CONSUMER_SECRET=oaGaU06IGqaTfObZnYdrYmDvxiHcHck8TQ9Xk61Ze1ghjHQYkP
+export TWITTER_ACCESS_TOKEN_KEY=929842798974656517-VuQxIuoLhtoeqW71LofX6M5fIw8Pf3c
+export TWITTER_ACCESS_TOKEN_SECRET=R5RZtQj5tLWbSgFx39lq6cd2AcIQRjQk5kbepOobxCplA
 ```
 
 or using `_config.yml`
 
 ```bash
 twitterAutoPublish:
-  consumerKey: h2jOUdwVwCTRnM6zVeRC9fVhD
+  consumerKey: Xegp8XDTMqVxcI2tId1juT70X
   consumerSecret: fq4eY5NmK2X9ZxSDSUaFqMBPWWMUCCYu35PMvzoqB0YzqLOTEs
-  accessTokenKey: 929842798974656517-wrwhE2hNL5whclsgjWZ2PlGkuaAUIda
-  accessTokenSecret: RSbflHTBwAjUKZTeKk7lChzZrjbcoPh71wQuxth4ZErmj
+  accessTokenKey: 929842798974656517-VuQxIuoLhtoeqW71LofX6M5fIw8Pf3c
+  accessTokenSecret: R5RZtQj5tLWbSgFx39lq6cd2AcIQRjQk5kbepOobxCplA
 ```
 
 ## About twitter-db.json
