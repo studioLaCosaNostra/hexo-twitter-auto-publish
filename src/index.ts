@@ -174,17 +174,19 @@ function watchHexoDeployAfter(twitterPublish: () => Promise<void>) {
   });
 }
 
-function registerConsoleCommandPublish(twitterPublish: () => Promise<void>) {
-  hexo.extend.console.register('twitter-publish', 'Twitter publish posts.', function () {
-    twitterPublish();
+function registerConsoleCommandPublish() {
+  hexo.extend.console.register('twitter-publish', 'Twitter publish posts.', async () => {
+    const db = await low(adapter);
+    const twitter: TwitterActions = await setupTwitter(db);
+    twitter.publish();
   });
 }
+registerConsoleCommandPublish();
 
 async function start() {
   const db = await low(adapter);
   const twitter: TwitterActions = await setupTwitter(db);
   registerFilters(twitter.updateDB);
   watchHexoDeployAfter(twitter.publish);
-  registerConsoleCommandPublish(twitter.publish);
 }
 start();
