@@ -17,6 +17,7 @@ interface Document {
 type TwitterActions = {
   updateDB(document: Document, hexoPublished: boolean): Promise<void>;
   publish(): Promise<void>;
+  cleanToPublish(): Promise<void>;
 }
 
 interface DocumentInfo {
@@ -75,7 +76,6 @@ function twitterConfig(): Config {
 
 async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterActions> {
   await db.defaults({ 'published': [], 'to-destroy': [], 'to-publish': [] }).write();
-  await db.get('to-publish').remove().write();
   return {
     async updateDB({ title, permalink, tags }: Document, hexoPublished: boolean) {
       await db.read();
@@ -139,6 +139,9 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
       } catch (error) {
         hexo.log.error(error);
       }
+    },
+    async cleanToPublish() {
+      await db.get('to-publish').remove().write();
     }
   }
 }
@@ -153,7 +156,8 @@ function processDocument(updateDB: (document: Document, hexoPublished: boolean) 
   }
 } 
 
-function registerFilters(updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
+async function registerFilters(cleanToPublish: () => Promise<void>, updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
+  await cleanToPublish();
   const updateDocumentDB = processDocument(updateDB);
   hexo.extend.filter.register('after_post_render', updateDocumentDB, { async: true });
   hexo.extend.filter.register('after_generate', async () => {
@@ -186,7 +190,7 @@ registerConsoleCommandPublish();
 async function start() {
   const db = await low(adapter);
   const twitter: TwitterActions = await setupTwitter(db);
-  registerFilters(twitter.updateDB);
+  registerFilters(twitter.cleanToPublish, twitter.updateDB);
   watchHexoDeployAfter(twitter.publish);
 }
 start();
