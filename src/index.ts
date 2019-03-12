@@ -157,10 +157,10 @@ function processDocument(updateDB: (document: Document, hexoPublished: boolean) 
 } 
 
 async function registerFilters(cleanToPublish: () => Promise<void>, updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
-  await cleanToPublish();
   const updateDocumentDB = processDocument(updateDB);
   hexo.extend.filter.register('after_post_render', updateDocumentDB, { async: true });
   hexo.extend.filter.register('after_generate', async () => {
+    await cleanToPublish();
     for (var index = 0; index < hexo.locals.cache.posts.length; index++) {
       const post = hexo.locals.cache.posts.data[index];
       await updateDocumentDB(post);
