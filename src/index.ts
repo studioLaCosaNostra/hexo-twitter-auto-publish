@@ -1,6 +1,6 @@
-import low from 'lowdb';
 import FileAsync from 'lowdb/adapters/FileAsync';
 import Twitter from 'twitter';
+import low from 'lowdb';
 
 declare var hexo: any;
 const adapter = new FileAsync('twitter-db.json');
@@ -107,8 +107,8 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
     },
     async publish() {
       await db.read();
-      const toDestroy = await db.get('to-destroy').value();
-      const toPublish = await db.get('to-publish').value();
+      const toDestroy = db.get('to-destroy').value();
+      const toPublish = db.get('to-publish').value();
       try {
         const client = new Twitter(twitterConfig());
         await Promise.all(toDestroy.map(async (documentInfo: DocumentInfo) => {
@@ -161,12 +161,14 @@ async function registerFilters(cleanToPublish: () => Promise<void>, updateDB: (d
   hexo.extend.filter.register('after_post_render', updateDocumentDB, { async: true });
   hexo.extend.filter.register('after_generate', async () => {
     await cleanToPublish();
-    for (var index = 0; index < hexo.locals.cache.posts.length; index++) {
-      const post = hexo.locals.cache.posts.data[index];
+    const posts = hexo.locals.get('posts');
+    for (var index = 0; index < posts.length; index++) {
+      const post = posts.data[index];
       await updateDocumentDB(post);
     }
-    for (var index = 0; index < hexo.locals.cache.pages.length; index++) {
-      const page = hexo.locals.cache.pages.data[index];
+    const pages = hexo.locals.get('pages');
+    for (var index = 0; index < pages.length; index++) {
+      const page = pages.data[index];
       await updateDocumentDB(page);
     }
   }, { async: true });
