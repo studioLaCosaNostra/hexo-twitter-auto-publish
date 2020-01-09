@@ -1,5 +1,6 @@
 import FileAsync from 'lowdb/adapters/FileAsync';
 import Twitter from 'twitter';
+import camelcase from 'camelcase';
 import low from 'lowdb';
 
 declare var hexo: any;
@@ -56,10 +57,6 @@ function validateConfig() {
     && hexo.config.twitterAutoPublish.accessTokenKey
     && hexo.config.twitterAutoPublish.accessTokenSecret
   ));
-}
-
-const camelize = (text: string) => {
-  return text.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (_, chr) => chr.toUpperCase());
 }
 
 function twitterConfig(): Config {
@@ -123,7 +120,7 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
         }));
         await Promise.all(toPublish.map(async (documentInfo: DocumentInfo) => {
           const { title, tags, permalink } = documentInfo;
-          const hashedTags = tags.map(tag => `#${camelize(tag)}`).join(' ');
+          const hashedTags = tags.map(tag => `#${camelcase(tag)}`).join(' ');
           const status =  `${title} ${hashedTags} ${permalink}`;
           try {
             const tweet = await client.post('statuses/update', { status });
