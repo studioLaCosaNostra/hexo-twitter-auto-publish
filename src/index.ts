@@ -12,7 +12,7 @@ interface Document {
   title: string;
   published: boolean;
   twitterAutoPublish: boolean;
-  tweet?: string;
+  tweetMessage?: string;
   tags: (string | { name: string })[];
 }
 
@@ -26,7 +26,7 @@ interface DocumentInfo {
   title: string;
   permalink: string;
   tags: string[];
-  tweet?: string;
+  tweetMessage?: string;
   hexoPublished: boolean;
   tweetId?: string;
 }
@@ -76,7 +76,7 @@ function twitterConfig(): Config {
 async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterActions> {
   await db.defaults({ 'published': [], 'to-destroy': [], 'to-publish': [] }).write();
   return {
-    async updateDB({ title, permalink, tags, tweet }: Document, hexoPublished: boolean) {
+    async updateDB({ title, permalink, tags, tweetMessage }: Document, hexoPublished: boolean) {
       await db.read();
       const published = db.get('published').find({ permalink }).value();
       if (published) {
@@ -91,7 +91,7 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
             title,
             permalink,
             hexoPublished,
-            tweet,
+            tweetMessage,
             tags: tagNames
           };
           const document = db.get('to-publish').find({ permalink });
@@ -122,9 +122,9 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
           }
         }));
         await Promise.all(toPublish.map(async (documentInfo: DocumentInfo) => {
-          const { title, tags, permalink, tweet } = documentInfo;
+          const { title, tags, permalink, tweetMessage } = documentInfo;
           const hashedTags = tags.map(tag => `#${camelcase(tag)}`).join(' ');
-          const status =  tweet ? `${tweet} ${hashedTags} ${permalink}` : `${title} ${hashedTags} ${permalink}`;
+          const status =  tweetMessage ? `${tweetMessage} ${hashedTags} ${permalink}` : `${title} ${hashedTags} ${permalink}`;
           try {
             const tweet = await client.post('statuses/update', { status });
             await db.get('published').push({
