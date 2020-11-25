@@ -12,6 +12,7 @@ interface Document {
   title: string;
   published: boolean;
   twitterAutoPublish: boolean;
+  tweet?: string;
   tags: (string | { name: string })[];
 }
 
@@ -25,6 +26,7 @@ interface DocumentInfo {
   title: string;
   permalink: string;
   tags: string[];
+  tweet?: string;
   hexoPublished: boolean;
   tweetId?: string;
 }
@@ -74,7 +76,7 @@ function twitterConfig(): Config {
 async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterActions> {
   await db.defaults({ 'published': [], 'to-destroy': [], 'to-publish': [] }).write();
   return {
-    async updateDB({ title, permalink, tags }: Document, hexoPublished: boolean) {
+    async updateDB({ title, permalink, tags, tweet }: Document, hexoPublished: boolean) {
       await db.read();
       const published = db.get('published').find({ permalink }).value();
       if (published) {
@@ -85,10 +87,11 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
       } else {
         if (hexoPublished) {
           const tagNames: string[] = tags ? tags.map((tag: any) => tag.name || tag) : [];
-          const data = { 
+          const data = {
             title,
             permalink,
             hexoPublished,
+            tweet,
             tags: tagNames
           };
           const document = db.get('to-publish').find({ permalink });
@@ -119,13 +122,13 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
           }
         }));
         await Promise.all(toPublish.map(async (documentInfo: DocumentInfo) => {
-          const { title, tags, permalink } = documentInfo;
+          const { title, tags, permalink, tweet } = documentInfo;
           const hashedTags = tags.map(tag => `#${camelcase(tag)}`).join(' ');
-          const status =  `${title} ${hashedTags} ${permalink}`;
+          const status =  tweet ? `${tweet} ${hashedTags} ${permalink}` : `${title} ${hashedTags} ${permalink}`;
           try {
             const tweet = await client.post('statuses/update', { status });
-            await db.get('published').push({ 
-              ...documentInfo, 
+            await db.get('published').push({
+              ...documentInfo,
               tweetId: tweet.id_str
             }).write();
             await db.get('to-publish').remove({ permalink }).write();
@@ -151,7 +154,7 @@ function processDocument(updateDB: (document: Document, hexoPublished: boolean) 
     await updateDB(document, hexoPublished);
     return document;
   }
-} 
+}
 
 async function registerFilters(cleanToPublish: () => Promise<void>, updateDB: (document: Document, hexoPublished: boolean) => Promise<void>) {
   const updateDocumentDB = processDocument(updateDB);
