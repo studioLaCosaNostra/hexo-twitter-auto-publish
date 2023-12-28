@@ -1,5 +1,5 @@
 import FileAsync from 'lowdb/adapters/FileAsync';
-import Twitter from 'twitter';
+import TwitterApi from 'twitter-api-v2';
 import camelcase from 'camelcase';
 import low from 'lowdb';
 
@@ -38,10 +38,10 @@ interface DbSchema {
 }
 
 interface Config {
-  consumer_key: string;
-  consumer_secret: string;
-  access_token_key: string;
-  access_token_secret: string;
+  appKey: string;
+  appSecret: string;
+  accessToken: string;
+  accessSecret: string;
 }
 
 function validateConfig() {
@@ -51,14 +51,14 @@ function validateConfig() {
     && process.env.TWITTER_ACCESS_TOKEN_KEY
     && process.env.TWITTER_ACCESS_TOKEN_SECRET
   )
-  ||
-  (
-    hexo.config.twitterAutoPublish
-    && hexo.config.twitterAutoPublish.consumerKey
-    && hexo.config.twitterAutoPublish.consumerSecret
-    && hexo.config.twitterAutoPublish.accessTokenKey
-    && hexo.config.twitterAutoPublish.accessTokenSecret
-  ));
+    ||
+    (
+      hexo.config.twitterAutoPublish
+      && hexo.config.twitterAutoPublish.consumerKey
+      && hexo.config.twitterAutoPublish.consumerSecret
+      && hexo.config.twitterAutoPublish.accessTokenKey
+      && hexo.config.twitterAutoPublish.accessTokenSecret
+    ));
 }
 
 function twitterConfig(): Config {
@@ -66,10 +66,10 @@ function twitterConfig(): Config {
     throw new Error('Missing hexo-twitter-auto-publish configuration');
   }
   return {
-    consumer_key: process.env.TWITTER_CONSUMER_KEY || hexo.config.twitterAutoPublish.consumerKey,
-    consumer_secret: process.env.TWITTER_CONSUMER_SECRET || hexo.config.twitterAutoPublish.consumerSecret,
-    access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY || hexo.config.twitterAutoPublish.accessTokenKey,
-    access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET || hexo.config.twitterAutoPublish.accessTokenSecret
+    appKey: process.env.TWITTER_CONSUMER_KEY || hexo.config.twitterAutoPublish.consumerKey,
+    appSecret: process.env.TWITTER_CONSUMER_SECRET || hexo.config.twitterAutoPublish.consumerSecret,
+    accessToken: process.env.TWITTER_ACCESS_TOKEN_KEY || hexo.config.twitterAutoPublish.accessTokenKey,
+    accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || hexo.config.twitterAutoPublish.accessTokenSecret
   }
 }
 
@@ -110,11 +110,11 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
       const toDestroy = db.get('to-destroy').value();
       const toPublish = db.get('to-publish').value();
       try {
-        const client = new Twitter(twitterConfig());
+        const client = new TwitterApi(twitterConfig());
         await Promise.all(toDestroy.map(async (documentInfo: DocumentInfo) => {
           const { tweetId } = documentInfo;
           try {
-            await client.post(`statuses/destroy/${tweetId}`, {});
+            await client.v2.deleteTweet(String(tweetId));;
             await db.get('published').remove({ tweetId }).write();
             await db.get('to-destroy').remove({ tweetId }).write();
           } catch (error) {
@@ -124,12 +124,12 @@ async function setupTwitter(db: low.LowdbAsync<DbSchema>): Promise<TwitterAction
         await Promise.all(toPublish.map(async (documentInfo: DocumentInfo) => {
           const { title, tags, permalink, tweetMessage } = documentInfo;
           const hashedTags = tags.map(tag => `#${camelcase(tag)}`).join(' ');
-          const status =  tweetMessage ? `${tweetMessage} ${hashedTags} ${permalink}` : `${title} ${hashedTags} ${permalink}`;
+          const status = tweetMessage ? `${tweetMessage} ${hashedTags} ${permalink}` : `${title} ${hashedTags} ${permalink}`;
           try {
-            const tweet = await client.post('statuses/update', { status });
+            const tweet = await client.v2.tweet(status);
             await db.get('published').push({
               ...documentInfo,
-              tweetId: tweet.id_str
+              tweetId: tweet.data.id
             }).write();
             await db.get('to-publish').remove({ permalink }).write();
           } catch (error) {

@@ -18,7 +18,7 @@
   "dependencies": {
     "camelcase": "^5.3.1",
     "lowdb": "^1.0.0",
-    "twitter": "^1.7.1"
+    "twitter-api-v2": "^1.15.2"
   },
   "devDependencies": {
     "@types/lowdb": "^1.0.9",
